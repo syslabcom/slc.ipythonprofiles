@@ -57,6 +57,8 @@ class ZopeDebug(object):
 
         self.configfile = configfile
 
+        self.portal_path = os.environ.get( "PORTAL_PATH" )
+
         try:
             from Zope2 import configure
         except ImportError:
@@ -123,6 +125,15 @@ class ZopeDebug(object):
 
     @property
     def portal(self):
+        if self.portal_path:
+            try:
+                portal = self.app.unrestrictedTraverse(self.portal_path)
+            except (KeyError, AttributeError):
+                pass
+            else:
+                if portal.meta_type == 'Plone Site':
+                    return portal
+            print "No Plone Site found at PORTAL_PATH=%s" % self.portal_path
         portals = self.app.objectValues( "Plone Site" )
         if len(portals):
             return portals[0]
