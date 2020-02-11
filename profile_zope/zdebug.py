@@ -13,6 +13,7 @@
 # German Free Software License
 # The License may be obtained under <http://www.d-fsl.org>.
 
+from __future__ import print_function
 __author__ = """Stefan Eletzhofer <stefan.eletzhofer@inquant.de>"""
 __docformat__ = 'plaintext'
 __revision__ = "$Revision$"
@@ -26,7 +27,7 @@ except ImportError:
     from IPython.core.interactiveshell import InteractiveShell
     get_inst = InteractiveShell.instance
 
-from types import StringType
+import six
 import sys
 import os
 import textwrap
@@ -58,17 +59,24 @@ class ZopeDebug(object):
         if configfile is None:
             raise RuntimeError("CONFIG_FILE env not set")
 
-        print "CONFIG_FILE=", configfile
-        print "INSTANCE_HOME=", self.instancehome
+        print("CONFIG_FILE=", configfile)
+        print("INSTANCE_HOME=", self.instancehome)
 
         self.configfile = configfile
 
-        try:
-            from Zope2 import configure
-        except ImportError:
-            from Zope import configure
+        if six.PY2:
+            try:
+                from ZServer.Zope2.Startup.run import configure
+            except ImportError:
+                try:
+                    from Zope2 import configure
+                except ImportError:
+                    from Zope import configure
 
-        configure(configfile)
+            configure(configfile)
+        else:
+            from Zope2.Startup.run import configure_wsgi
+            configure_wsgi(r'%s' % self.configfile)
 
         try:
             import Zope2
@@ -82,9 +90,9 @@ class ZopeDebug(object):
 
         try:
             self._make_permissive()
-            print "Permissive security installed"
+            print("Permissive security installed")
         except:
-            print "Permissive security NOT installed"
+            print("Permissive security NOT installed")
 
         self._pwd = self.portal or self.app
 
@@ -103,7 +111,7 @@ class ZopeDebug(object):
                 sm = getSiteManager()
 
                 if sm is gsm:
-                    print "ERROR SETTING SITE!"
+                    print("ERROR SETTING SITE!")
         except:
             # XXX: What exceptions is this supposed to catch?
             pass
@@ -162,7 +170,7 @@ class ZopeDebug(object):
         """
         if username is None:
             self._make_permissive()
-            print "PermissiveSecurityPolicy put back in place"
+            print("PermissiveSecurityPolicy put back in place")
             return
 
         user = (
@@ -170,7 +178,7 @@ class ZopeDebug(object):
             self.app.acl_users.getUser(username)
         )
         if not user:
-            print "Can't find %s in %s" % (username, self.portal.acl_users)
+            print("Can't find %s in %s" % (username, self.portal.acl_users))
             return
 
         from AccessControl.ZopeSecurityPolicy import ZopeSecurityPolicy
@@ -182,7 +190,7 @@ class ZopeDebug(object):
         self.oldpolicy = setSecurityPolicy(_policy)
         wrapped_user = user.__of__(self.portal.acl_users)
         newSecurityManager(None, wrapped_user)
-        print 'User changed.'
+        print('User changed.')
         return getSecurityManager().getUser()
 
     def getCatalogInfo(self, obj=None, catalog='portal_catalog', query=None,
@@ -191,7 +199,7 @@ class ZopeDebug(object):
         default query on that object, or pass an explicit query.
         """
         if obj and query:
-            print "Ignoring %s, using query." % obj
+            print("Ignoring %s, using query." % obj)
 
         catalog = self.portal.get(catalog)
         if not catalog:
@@ -199,7 +207,7 @@ class ZopeDebug(object):
 
         indexes = catalog._catalog.indexes
         if not query:
-            if type(obj) is StringType:
+            if isinstance(obj, six.string_types):
                 cwd = self.pwd()
                 obj = cwd.unrestrictedTraverse(obj)
             # If the default in the signature is mutable, its value will
@@ -274,21 +282,21 @@ class ZopeDebug(object):
          cd( portal.Members.admin )
          etc.
         """
-        if type(path) is not StringType:
+        if not isinstance(path, str):
             path = '/'.join(path.getPhysicalPath())
         cwd = self.pwd()
         x = cwd.unrestrictedTraverse(path)
         if x is None:
             raise KeyError("Can't cd to %s" % path)
 
-        print "%s -> %s" % (self.pwd().getId(), x.getId())
+        print("%s -> %s" % (self.pwd().getId(), x.getId()))
         self._pwd = x
 
     def ls(self, x=None):
         """
         List object(s)
         """
-        if type(x) is StringType:
+        if isinstance(x, six.string_types):
             cwd = self.pwd()
             x = cwd.unrestrictedTraverse(x)
         if x is None:
@@ -319,9 +327,9 @@ def main():
     SOFTWARE_HOME = os.environ.get("SOFTWARE_HOME")
     if SOFTWARE_HOME:
         sys.path.append(SOFTWARE_HOME)
-        print "SOFTWARE_HOME=%s\n" % SOFTWARE_HOME
+        print("SOFTWARE_HOME=%s\n" % SOFTWARE_HOME)
     else:
-        print "No $SOFTWARE_HOME set, assume Zope >= 2.12 (Plone 4 has this)."
+        print("No $SOFTWARE_HOME set, assume Zope >= 2.12 (Plone 4 has this).")
 
     zope_debug = ZopeDebug()
 
@@ -335,7 +343,7 @@ def main():
         dir(zope_debug.utils)
         if not x.startswith("_")]
     )
-    print textwrap.dedent("""
+    print(textwrap.dedent("""
         ZOPE mode iPython shell.
 
           Bound names:
@@ -346,11 +354,11 @@ def main():
         If you call utils.su() with no arguments, the PermissiveSecurityPolicy
         will be put back in place.
 
-        """ % available_utils)
+        """ % available_utils))
     if SOFTWARE_HOME:
-        print "Uses the $SOFTWARE_HOME and $CONFIG_FILE environment variables."
+        print("Uses the $SOFTWARE_HOME and $CONFIG_FILE environment variables.")
     else:
-        print "Uses the $CONFIG_FILE environment variable."
+        print("Uses the $CONFIG_FILE environment variable.")
 
     ip.user_ns.update(zope_debug.namespace)
 
