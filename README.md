@@ -41,3 +41,9 @@ Add this to your buildout configuration:
 ### Usage
 
 Run ipzope. The interpreter prints a few hints about what's available in the shell.
+
+## License
+
+This software is distributed under the [German Free Software License](http://www.d-fsl.org).
+
+The original version of profile_zope was created by [InQuant GmbH](https://www.inquant.de/).
