@@ -27,7 +27,7 @@ except ImportError:
     from IPython.core.interactiveshell import InteractiveShell
     get_inst = InteractiveShell.instance
 
-from types import StringType
+import six
 import sys
 import os
 import textwrap
@@ -64,12 +64,19 @@ class ZopeDebug(object):
 
         self.configfile = configfile
 
-        try:
-            from Zope2 import configure
-        except ImportError:
-            from Zope import configure
+        if six.PY2:
+            try:
+                from ZServer.Zope2.Startup.run import configure
+            except ImportError:
+                try:
+                    from Zope2 import configure
+                except ImportError:
+                    from Zope import configure
 
-        configure(configfile)
+            configure(configfile)
+        else:
+            from Zope2.Startup.run import configure_wsgi
+            configure_wsgi(r'%s' % self.configfile)
 
         try:
             import Zope2
@@ -200,7 +207,7 @@ class ZopeDebug(object):
 
         indexes = catalog._catalog.indexes
         if not query:
-            if type(obj) is StringType:
+            if isinstance(obj, six.string_types):
                 cwd = self.pwd()
                 obj = cwd.unrestrictedTraverse(obj)
             # If the default in the signature is mutable, its value will
@@ -275,7 +282,7 @@ class ZopeDebug(object):
          cd( portal.Members.admin )
          etc.
         """
-        if type(path) is not StringType:
+        if not isinstance(path, str):
             path = '/'.join(path.getPhysicalPath())
         cwd = self.pwd()
         x = cwd.unrestrictedTraverse(path)
@@ -289,7 +296,7 @@ class ZopeDebug(object):
         """
         List object(s)
         """
-        if type(x) is StringType:
+        if isinstance(x, six.string_types):
             cwd = self.pwd()
             x = cwd.unrestrictedTraverse(x)
         if x is None:
