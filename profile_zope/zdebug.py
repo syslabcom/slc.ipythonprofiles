@@ -64,7 +64,11 @@ class ZopeDebug(object):
 
         self.configfile = configfile
 
-        if six.PY2:
+        try:
+            from Zope2.Startup.run import configure_wsgi
+
+            configure_wsgi(r"%s" % self.configfile)
+        except ImportError:
             try:
                 from ZServer.Zope2.Startup.run import configure
             except ImportError:
@@ -74,9 +78,6 @@ class ZopeDebug(object):
                     from Zope import configure
 
             configure(configfile)
-        else:
-            from Zope2.Startup.run import configure_wsgi
-            configure_wsgi(r'%s' % self.configfile)
 
         try:
             import Zope2
