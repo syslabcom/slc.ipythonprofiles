@@ -363,6 +363,4 @@ def main():
 
     ip.user_ns.update(zope_debug.namespace)
 
-
-main()
 # vim: set ft=python ts=4 sw=4 expandtab :
