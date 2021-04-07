@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from IPython.core.interactiveshell import InteractiveShell
-from oira.statistics.deployment.scripts import OiraMetabase_API
+from oira.statistics.deployment.metabase import OiraMetabase_API
 import os
 
 args = {
@@ -11,7 +11,9 @@ args = {
 }
 
 api_url = "http://{args[metabase_host]}:{args[metabase_port]}".format(args=args)
-mb = OiraMetabase_API(api_url, args["metabase_user"], args["metabase_password"])
+mb = OiraMetabase_API(
+    api_url, args["metabase_user"], args["metabase_password"].replace("\\", "\\\\")
+)  # XXX what's with the backslash?
 
 ip = InteractiveShell.instance()
 ip.user_ns["mb"] = mb
